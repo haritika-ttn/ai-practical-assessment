@@ -1,0 +1,59 @@
+<!--/* Ticket list screen */-->
+<sly data-sly-use.model="com.supporttickets.core.models.SupportAppPageModel"
+     data-sly-use.clientlib="core/wcm/components/commons/v1/templates/clientlib.html"/>
+<sly data-sly-call="${clientlib.css @ categories='supporttickets.support-app'}"/>
+<sly data-sly-call="${clientlib.js @ categories='supporttickets.support-app'}"/>
+
+<div class="support-app"
+     data-support-app
+     data-page="list"
+     data-api-base="${model.apiBase @ context='attribute'}"
+     data-csrf-url="${model.csrfTokenUrl @ context='attribute'}"
+     data-list-url="${model.listPageUrl @ context='attribute'}"
+     data-create-url="${model.createPageUrl @ context='attribute'}"
+     data-detail-url="${model.detailPageUrl @ context='attribute'}">
+
+    <header class="support-app__header">
+        <h1 class="support-app__title">Support Tickets</h1>
+        <a class="support-app__btn" href="${model.createPageUrl @ context='uri'}">Create Ticket</a>
+    </header>
+
+    <div class="support-app__alert" data-alert role="alert"></div>
+
+    <div class="support-app__toolbar">
+        <div class="support-app__field">
+            <label for="ticket-search">Search</label>
+            <input id="ticket-search" type="search" data-search-input placeholder="Search title or description…" maxlength="200"/>
+        </div>
+        <div class="support-app__field">
+            <label for="ticket-status-filter">Status</label>
+            <select id="ticket-status-filter" data-status-filter>
+                <option value="">All statuses</option>
+                <option value="OPEN">Open</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+                <option value="CANCELLED">Cancelled</option>
+            </select>
+        </div>
+        <button type="button" class="support-app__btn support-app__btn--secondary" data-retry hidden>Retry</button>
+    </div>
+
+    <table class="support-app__table" aria-label="Support tickets">
+        <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Status</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Assignee</th>
+                <th scope="col">Updated</th>
+            </tr>
+        </thead>
+        <tbody data-ticket-table-body>
+            <tr><td colspan="5" class="support-app__loading">Loading tickets…</td></tr>
+        </tbody>
+    </table>
+
+    <div class="support-app__empty" data-empty-state hidden></div>
+    <p><a href="#" data-clear-filters hidden>Clear filters</a></p>
+</div>

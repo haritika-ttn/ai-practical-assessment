@@ -1,0 +1,7 @@
+#base=js
+csrf.js
+api.js
+utils.js
+list.js
+create.js
+detail.js

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/conf/supporttickets" mode="merge"/>
+    <filter root="/content/supporttickets" mode="merge"/>
+    <filter root="/content/support-app" mode="merge"/>
+    <filter root="/content/dam/supporttickets" mode="merge">
+        <exclude pattern="/content/dam/supporttickets(/.*)?"/>
+        <include pattern="/content/dam/supporttickets/jcr:content(/.*)?"/>
+    </filter>
+    <filter root="/content/dam/supporttickets/asset.jpg" mode="merge"/>
+    <filter root="/content/experience-fragments/supporttickets" mode="merge"/>
+</workspaceFilter>

@@ -1,0 +1,20 @@
+{
+    "scripts": [
+        "create path (sling:Folder) /content/support-tickets",
+        "create path (sling:Folder) /content/support-tickets/tickets",
+        "create path (sling:OrderedFolder) /content/dam/supporttickets",
+        "create path (nt:unstructured) /content/dam/supporttickets/jcr:content",
+        "set properties on /content/dam/supporttickets/jcr:content\n  set cq:conf{String} to /conf/supporttickets\n  set jcr:title{String} to \"Support Ticket Management\"\nend",
+        "create path (rep:AuthorizableFolder) /home/users/support",
+        "create service user support-tickets-service",
+        "create user agent1 with path /home/users/support/agent1",
+        "set properties on /home/users/support/agent1/profile\n  set givenName{String} to \"Alex\"\n  set familyName{String} to \"Agent\"\n  set email{String} to \"agent1@example.com\"\n  set role{String} to \"AGENT\"\nend",
+        "create user agent2 with path /home/users/support/agent2",
+        "set properties on /home/users/support/agent2/profile\n  set givenName{String} to \"Sam\"\n  set familyName{String} to \"Agent\"\n  set email{String} to \"agent2@example.com\"\n  set role{String} to \"AGENT\"\nend",
+        "create user supervisor1 with path /home/users/support/supervisor1",
+        "set properties on /home/users/support/supervisor1/profile\n  set givenName{String} to \"Pat\"\n  set familyName{String} to \"Supervisor\"\n  set email{String} to \"supervisor1@example.com\"\n  set role{String} to \"SUPERVISOR\"\nend",
+        "set ACL on /content/support-tickets\n  allow jcr:read,rep:write,crx:replicate for support-tickets-service\nend",
+        "set ACL on /home/users\n  allow jcr:read for support-tickets-service\nend",
+        "set ACL on /home/users/support\n  allow jcr:read for support-tickets-service\nend"
+    ]
+}

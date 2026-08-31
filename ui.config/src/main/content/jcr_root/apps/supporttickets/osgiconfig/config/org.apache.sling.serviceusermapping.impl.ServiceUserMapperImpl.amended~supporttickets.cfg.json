@@ -1,0 +1,5 @@
+{
+    "user.mapping": [
+        "support-tickets.core:support-tickets-service=[support-tickets-service]"
+    ]
+}

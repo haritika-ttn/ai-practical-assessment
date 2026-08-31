@@ -1,0 +1,112 @@
+<!--/* Ticket detail screen */-->
+<sly data-sly-use.model="com.supporttickets.core.models.SupportAppPageModel"
+     data-sly-use.clientlib="core/wcm/components/commons/v1/templates/clientlib.html"/>
+<sly data-sly-call="${clientlib.css @ categories='supporttickets.support-app'}"/>
+<sly data-sly-call="${clientlib.js @ categories='supporttickets.support-app'}"/>
+
+<div class="support-app"
+     data-support-app
+     data-page="detail"
+     data-api-base="${model.apiBase @ context='attribute'}"
+     data-csrf-url="${model.csrfTokenUrl @ context='attribute'}"
+     data-list-url="${model.listPageUrl @ context='attribute'}"
+     data-create-url="${model.createPageUrl @ context='attribute'}"
+     data-detail-url="${model.detailPageUrl @ context='attribute'}">
+
+    <header class="support-app__header">
+        <h1 class="support-app__title">Ticket Detail</h1>
+        <a class="support-app__back" href="${model.listPageUrl @ context='uri'}">← Back to list</a>
+    </header>
+
+    <div class="support-app__alert" data-alert role="alert"></div>
+
+    <p class="support-app__loading" data-detail-loading>Loading ticket…</p>
+
+    <div data-not-found hidden>
+        <p>Ticket not found.</p>
+        <a class="support-app__btn support-app__btn--secondary" href="${model.listPageUrl @ context='uri'}">Back to list</a>
+    </div>
+
+    <div data-detail-content hidden>
+        <section class="support-app__section">
+            <h2 class="support-app__section-title">Ticket fields</h2>
+            <form data-edit-form novalidate>
+                <div class="support-app__field" data-field="title">
+                    <label for="detail-title">Title <span aria-hidden="true">*</span></label>
+                    <input id="detail-title" name="title" type="text" maxlength="200" required/>
+                    <span class="support-app__field-error" data-field-error></span>
+                </div>
+
+                <div class="support-app__field" data-field="description">
+                    <label for="detail-description">Description</label>
+                    <textarea id="detail-description" name="description" maxlength="5000"></textarea>
+                    <span class="support-app__field-error" data-field-error></span>
+                </div>
+
+                <div class="support-app__grid-2">
+                    <div class="support-app__field" data-field="priority">
+                        <label for="detail-priority">Priority <span aria-hidden="true">*</span></label>
+                        <select id="detail-priority" name="priority" required></select>
+                        <span class="support-app__field-error" data-field-error></span>
+                    </div>
+
+                    <div class="support-app__field" data-field="assignedTo">
+                        <label for="detail-assignee">Assignee</label>
+                        <select id="detail-assignee" data-assignee></select>
+                        <span class="support-app__field-error" data-field-error></span>
+                    </div>
+                </div>
+
+                <div class="support-app__actions">
+                    <button type="submit" class="support-app__btn" data-save>Save changes</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="support-app__section" data-status-section>
+            <h2 class="support-app__section-title">Status</h2>
+            <p>Current: <span class="support-app__badge" data-current-status></span></p>
+            <div class="support-app__status-row">
+                <div class="support-app__field" data-field="status">
+                    <label for="detail-status">New status</label>
+                    <select id="detail-status" data-status-select></select>
+                </div>
+                <button type="button" class="support-app__btn" data-status-submit>Update status</button>
+            </div>
+            <p class="support-app__meta" data-status-message hidden></p>
+        </section>
+
+        <section class="support-app__section">
+            <h2 class="support-app__section-title">Metadata</h2>
+            <div class="support-app__meta">
+                <div>Ticket ID: <span data-meta-id></span></div>
+                <div>Created by: <span data-meta-created-by></span></div>
+                <div>Created at: <span data-meta-created-at></span></div>
+                <div>Updated at: <span data-meta-updated-at></span></div>
+            </div>
+        </section>
+
+        <section class="support-app__section">
+            <h2 class="support-app__section-title">Comments</h2>
+            <ul class="support-app__comments" data-comments-list></ul>
+
+            <form data-comment-form novalidate>
+                <div class="support-app__field" data-field="message">
+                    <label for="comment-message">New comment <span aria-hidden="true">*</span></label>
+                    <textarea id="comment-message" name="message" maxlength="2000" required></textarea>
+                    <span class="support-app__field-error" data-field-error></span>
+                </div>
+
+                <div class="support-app__field" data-field="createdBy">
+                    <label for="comment-author">Acting as <span aria-hidden="true">*</span></label>
+                    <select id="comment-author" data-comment-author required>
+                        <option value="">Loading…</option>
+                    </select>
+                    <span class="support-app__field-error" data-field-error></span>
+                </div>
+
+                <button type="submit" class="support-app__btn" data-comment-submit>Add comment</button>
+            </form>
+        </section>
+    </div>
+</div>

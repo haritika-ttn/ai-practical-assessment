@@ -1,0 +1,71 @@
+<!--/* Create ticket screen */-->
+<sly data-sly-use.model="com.supporttickets.core.models.SupportAppPageModel"
+     data-sly-use.clientlib="core/wcm/components/commons/v1/templates/clientlib.html"/>
+<sly data-sly-call="${clientlib.css @ categories='supporttickets.support-app'}"/>
+<sly data-sly-call="${clientlib.js @ categories='supporttickets.support-app'}"/>
+
+<div class="support-app"
+     data-support-app
+     data-page="create"
+     data-api-base="${model.apiBase @ context='attribute'}"
+     data-csrf-url="${model.csrfTokenUrl @ context='attribute'}"
+     data-list-url="${model.listPageUrl @ context='attribute'}"
+     data-create-url="${model.createPageUrl @ context='attribute'}"
+     data-detail-url="${model.detailPageUrl @ context='attribute'}">
+
+    <header class="support-app__header">
+        <h1 class="support-app__title">Create Ticket</h1>
+        <a class="support-app__back" href="${model.listPageUrl @ context='uri'}">← Back to list</a>
+    </header>
+
+    <div class="support-app__alert" data-alert role="alert"></div>
+
+    <form data-create-form novalidate>
+        <div class="support-app__field" data-field="title">
+            <label for="create-title">Title <span aria-hidden="true">*</span></label>
+            <input id="create-title" name="title" type="text" maxlength="200" required/>
+            <span class="support-app__field-error" data-field-error></span>
+        </div>
+
+        <div class="support-app__field" data-field="description">
+            <label for="create-description">Description</label>
+            <textarea id="create-description" name="description" maxlength="5000"></textarea>
+            <span class="support-app__field-error" data-field-error></span>
+        </div>
+
+        <div class="support-app__grid-2">
+            <div class="support-app__field" data-field="priority">
+                <label for="create-priority">Priority <span aria-hidden="true">*</span></label>
+                <select id="create-priority" name="priority" required>
+                    <option value="">Select priority…</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
+                </select>
+                <span class="support-app__field-error" data-field-error></span>
+            </div>
+
+            <div class="support-app__field" data-field="createdBy">
+                <label for="create-created-by">Acting as <span aria-hidden="true">*</span></label>
+                <select id="create-created-by" data-created-by required>
+                    <option value="">Loading…</option>
+                </select>
+                <span class="support-app__field-error" data-field-error></span>
+            </div>
+        </div>
+
+        <div class="support-app__field" data-field="assignedTo">
+            <label for="create-assigned-to">Assignee</label>
+            <select id="create-assigned-to" data-assigned-to>
+                <option value="">Loading…</option>
+            </select>
+            <span class="support-app__field-error" data-field-error></span>
+        </div>
+
+        <div class="support-app__actions">
+            <button type="submit" class="support-app__btn" data-submit>Create Ticket</button>
+            <a class="support-app__btn support-app__btn--secondary" href="${model.listPageUrl @ context='uri'}">Cancel</a>
+        </div>
+    </form>
+</div>
