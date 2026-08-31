@@ -163,7 +163,9 @@ public class TicketRepositoryImpl implements TicketRepository {
             if (ticketProperties != null) {
                 ticketProperties.put(
                         TicketConstants.PROP_UPDATED_AT,
-                        DateTimeUtil.nowUtcAfter(ticketProperties.get(TicketConstants.PROP_UPDATED_AT, String.class)));
+                        DateTimeUtil.maxUtcAfter(
+                                readTimestamp(ticketProperties.get(TicketConstants.PROP_UPDATED_AT)),
+                                now));
             }
 
             commit(resolver);
@@ -342,6 +344,16 @@ public class TicketRepositoryImpl implements TicketRepository {
 
     private String buildTicketPath(String ticketId) {
         return TicketConstants.TICKETS_PATH + "/" + ticketId;
+    }
+
+    private String readTimestamp(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String) {
+            return (String) value;
+        }
+        return value.toString();
     }
 
     private String trim(String value) {

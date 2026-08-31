@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -93,8 +95,10 @@ class TicketCommentIntegrationTest extends SupportTicketsIntegrationTestBase {
         Comment comment = repository.addComment(resolver, ticket.getId(), request);
 
         TicketDetail reloaded = repository.findById(resolver, ticket.getId());
-        assertTrue(reloaded.getUpdatedAt().compareTo(beforeUpdatedAt) >= 0);
-        assertTrue(reloaded.getUpdatedAt().compareTo(comment.getCreatedAt()) >= 0);
+        assertTrue(Instant.parse(reloaded.getUpdatedAt())
+                .compareTo(Instant.parse(beforeUpdatedAt)) >= 0);
+        assertTrue(Instant.parse(reloaded.getUpdatedAt())
+                .compareTo(Instant.parse(comment.getCreatedAt())) >= 0);
     }
 
     /**

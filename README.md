@@ -48,9 +48,6 @@ Users are **seeded AEM principals** only (no user-management UI). Authentication
 | Frontend | HTL + Clientlibs (`clientlib-support-app`) — vanilla JavaScript |
 | Build | Apache Maven 3.3.9+ |
 | Unit / integration tests | JUnit 5, Mockito, io.wcm.testing AEM Mock 5.5.4 |
-| Live integration tests | AEM Testing Clients (`it.tests`, requires running AEM) |
-| UI tests | Cypress scaffolding (`ui.tests`; lint runs in build) |
-| Dispatcher | Cloud-optimized Dispatcher config (`dispatcher`, `dispatcher.ams`) |
 | Deployment target | Adobe Cloud Manager Full Stack Pipelines |
 
 **AEM SDK API dependency** (parent `pom.xml`): `2026.8.27673.20260811T193135Z-260700`
@@ -96,11 +93,6 @@ ai-practical-assessment/
 ├── ui.config/                       # OSGi configs, repoinit, service-user mapping
 ├── ui.content/                      # Support-app pages, templates, sample content
 ├── all/                             # Aggregator content package for deployment
-├── dispatcher/                      # Dispatcher cloud config
-├── dispatcher.ams/                  # Dispatcher AMS variant
-├── it.tests/                        # Live AEM integration tests (archetype samples)
-├── ui.tests/                        # Cypress UI test module
-├── ui.frontend.react.forms.af/      # Archetype Forms frontend (builds in reactor)
 ├── requirements-analysis.md         # Lifecycle: requirements
 ├── acceptance-criteria.md           # Lifecycle: 67 ACs
 ├── design-notes.md                  # Lifecycle: architecture
@@ -126,8 +118,6 @@ ai-practical-assessment/
 | **Maven** | 3.3.9 or higher (enforcer rule in parent POM) |
 | **AEM SDK** | Local AEM Author/Publish Quickstart matching project SDK API version |
 | **Network** | Maven access to Adobe public repository (configured in parent POM) |
-| **Optional** | Dispatcher SDK / Docker for Dispatcher validation |
-| **Optional** | Node.js (used by `ui.tests` and `ui.frontend.react.forms.af` during Maven build) |
 
 **Verified build environment** ([test-results.md](test-results.md)): Windows 11, Java 21.0.9, Maven 3.9.14.
 
@@ -159,7 +149,6 @@ Common commands (from [AGENTS.md](AGENTS.md)):
 | `mvn clean install -pl <module> -PautoInstallPackage` | Deploy single content package |
 | `mvn clean install -pl core -PautoInstallBundle` | Deploy OSGi bundle only |
 | `mvn -pl core test` | Run Core unit/integration tests |
-| `mvn clean verify -Plocal` | Run live AEM ITs (`it.tests`; requires running instance) |
 
 **Maven properties** (parent `pom.xml`, overridable with `-D`):
 
@@ -281,7 +270,6 @@ mvn clean install -pl ui.config -PautoInstallPackage
 | `ui.config/.../RepositoryInitializer~supporttickets.cfg.json` | JCR paths, service user, seeded users, ACLs |
 | `ui.config/.../ServiceUserMapperImpl.amended~supporttickets.cfg.json` | Maps `support-tickets.core:support-tickets-service` → `support-tickets-service` |
 | `core/.../SupportAppPageModel.java` | Exposes API base and page URLs to HTL |
-| `dispatcher/` | Dispatcher filters, cache rules, vhosts |
 
 **Seeded users** (repoinit):
 
@@ -303,7 +291,6 @@ This project does **not** use application-level environment variables (no `.env`
 |-----------|--------|
 | `JAVA_HOME` | OS-level; must point to JDK 21 for local builds (developer responsibility) |
 | Maven `-D` properties | Override `aem.host`, `aem.port`, credentials for package install |
-| `it.tests` `-Plocal` | `it.author.url`, `it.author.user`, `it.author.password`, etc. (Maven properties, not env vars) |
 
 Default local install credentials (`admin`/`admin`) are **AEM Quickstart defaults** in `pom.xml` — not for production.
 
@@ -442,9 +429,7 @@ The API returns `allowedTransitions` on ticket detail responses. Enforcement is 
 | Tier | Location | Status |
 |------|----------|--------|
 | Unit + AEM Mock integration | `core/src/test/java` | **131 tests, all passed** ([test-results.md](test-results.md)) |
-| Live AEM ITs | `it.tests` | Archetype `CreatePageIT`, `GetPageIT` only; **not executed** in recorded session |
-| Cypress UI | `ui.tests` | Lint runs in build; **specs not executed** in recorded session |
-| Manual UI | — | [Not recorded in project artifacts] |
+| Manual Author smoke | UI pages on `:4502` | Partial evidence in [test-results.md](test-results.md) §4.1 |
 
 See [test-strategy.md](test-strategy.md) for scope and [test-results.md](test-results.md) for evidence.
 
@@ -464,22 +449,6 @@ mvn -pl core test
 mvn clean install
 ```
 
-### Live integration tests (requires running Author)
-
-```bash
-mvn clean verify -Plocal
-```
-
-Optional overrides: `-Dit.author.url=...`, `-Dit.author.user=...`, `-Dit.author.password=...`
-
-### Dispatcher validation
-
-```bash
-cd dispatcher && ./bin/validate.sh src
-```
-
-[Result not available in project artifacts for this command on Windows]
-
 ---
 
 ## 24. Build / test validation results
@@ -493,7 +462,7 @@ From [test-results.md](test-results.md) (2026-08-31):
 | Java | 21.0.9 |
 | Maven | 3.9.14 |
 
-**Not executed / not measured:** live `it.tests`, Cypress runs, manual UI, Dispatcher `validate.sh`, code coverage.
+**Not executed / not measured:** code coverage metrics.
 
 ---
 
@@ -506,9 +475,9 @@ From [test-results.md](test-results.md) (2026-08-31):
 | **Pagination** | List returns all matching tickets |
 | **User management** | Seeded users only; no CRUD UI |
 | **Delete** | No ticket or comment delete |
-| **Live tests** | No support-ticket-specific `it.tests` or Cypress specs executed |
+| **Live tests** | No live AEM IT or Cypress modules in reactor (archetype modules removed) |
 | **Docs drift** | `api-contract.md` still references `:cq_csrf_token`; code uses `CSRF-Token` only ([CR-007](code-review-notes.md)) |
-| **Archetype residue** | HelloWorld, Forms frontend module, archetype IT/UI tests remain in reactor |
+| **Archetype residue** | HelloWorld and sample servlet/filter classes remain in `core` and `ui.apps` |
 | **Concurrent updates** | Last-write-wins; no optimistic locking |
 
 ---
