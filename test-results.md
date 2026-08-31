@@ -45,7 +45,7 @@
 |-------|--------|-------|
 | **Live AEM `it.tests` (`*IT.java`)** | Not executed | `mvn clean install` packaged `it.tests` only; Failsafe ITs require `-Plocal` and a running Author/Publish instance |
 | **Cypress UI tests (`ui.tests`)** | Not executed | Build ran `npm ci` and `npm run lint` only; no Cypress spec run recorded |
-| **Manual UI verification** | Not recorded | [Result not available in project artifacts] |
+| **Manual UI verification** | Partial (session evidence) | Author `:4502` smoke during debugging — see §4.1; not a formal AC walkthrough |
 | **Dispatcher `validate.sh`** | Not executed | [Result not available in project artifacts] |
 | **Code coverage (JaCoCo or similar)** | Not measured | [Result not available in project artifacts] |
 
@@ -308,7 +308,54 @@ Criteria requiring manual UI, live AEM, or unexecuted suites are marked accordin
 | AC-160 | `TicketStateMachineIntegrationTest` present and passing | PASS |
 | AC-161 | ac040–ac044 integration tests passing | PASS |
 | AC-162 | 11 parameterized invalid transition cases + unit matrix passing | PASS |
-| AC-001, AC-060, AC-090 – AC-093, AC-100 – AC-101, AC-110 – AC-111, AC-121, AC-130 – AC-136, AC-150 – AC-152 | No automated execution evidence in this session | [Result not available in project artifacts] |
+| AC-001, AC-060, AC-090 – AC-093, AC-100 – AC-101, AC-110 – AC-111, AC-121, AC-130 – AC-136, AC-150 – AC-152 | No automated execution evidence in this session | [Result not available in project artifacts] — partial manual checks in §4.1 |
+
+---
+
+## 4.1 Manual Author E2E smoke (development session evidence)
+
+> **Scope:** Informal smoke checks performed on **AEM Author** (`localhost:4502`) while debugging during implementation (Aug 30–31, 2026).  
+> **Evidence source:** Cursor session transcript, [review-fixes.md](review-fixes.md) RF-001–RF-003, [debugging-notes.md](debugging-notes.md).  
+> **Not equivalent to:** formal manual test script execution, full AC walkthrough, Cypress, or Publish/Dispatcher E2E.
+
+### Environment
+
+| Field | Value |
+|-------|-------|
+| **Instance** | AEM Author Quickstart |
+| **Port** | `4502` (assumed per README and debug prompts) |
+| **Quickstart version** | [Not recorded in project artifacts] |
+| **Package deploy** | Assumed via local install during development; `mvn -PautoInstallSinglePackage` result not recorded |
+
+### Recorded checks
+
+| # | Check | Method | Result | Evidence |
+|---|-------|--------|--------|----------|
+| 1 | Nested API `GET /bin/support-tickets/users.json` | Browser or direct URL on Author | **PASS** (after ResourceProvider fix) | [debugging-notes.md](debugging-notes.md) DBG-06; transcript Aug 30 |
+| 2 | `GET /libs/granite/csrf/token.json` | Browser Network tab | **PASS** — HTTP 200 | [review-fixes.md](review-fixes.md) RF-001 |
+| 3 | Create ticket `POST /bin/support-tickets.json` from UI | Browser Network tab after CSRF fix | **PASS** — POST visible | RF-001; developer confirmation in session |
+| 4 | `GET /bin/support-tickets/users.json` returns seeded users | API / create form dropdown | **PASS** (after UserManager fix) | RF-003; session history |
+| 5 | Create ticket redirect to detail page | UI after successful create | **Fixed in source** | RF-002; end-to-end redirect not in formal log |
+| 6 | List / search / filter UI | — | [Not recorded] | — |
+| 7 | Status transition via UI | — | [Not recorded] | — |
+| 8 | Comment via UI | — | [Not recorded] | — |
+| 9 | Publish tier / Dispatcher `:80` | — | [Not executed] | CR-001 |
+
+### Limitations of this record
+
+1. **Session-derived**, not a repeatable test script with timestamps and screenshots.
+2. **Author only** — Publish replication and Dispatcher routing not validated.
+3. **Targeted at debug failures** — not systematic coverage of all 67 ACs.
+4. Several UI flows (list search, status PATCH from detail, comments) have **no recorded** manual outcome.
+
+### Relationship to automated tests
+
+| Concern | AEM Mock (§3) | Manual Author (§4.1) |
+|---------|---------------|------------------------|
+| State machine / validation | Covered (131 tests) | Not re-verified manually |
+| Nested `/bin` servlet routing | Not caught | **Caught** on Author |
+| User listing (`UserManager`) | Mocked in integration base | **Caught** on Author |
+| CSRF `fetch()` header | Not applicable | **Caught** on Author |
 
 ---
 
@@ -368,9 +415,9 @@ The following warnings appeared during `mvn -B clean install` but did **not** fa
 
 1. **In-process only:** Core tests use AEM Mock and mocked `UserLookupService` / `QueryBuilder`; they do not prove behaviour on a live AEM Author instance.
 2. **No coverage metrics:** Code coverage was not collected or reported.
-3. **No UI/E2E results:** Cypress and browser-based flows were not executed in this session.
+3. **No formal UI/E2E test run:** Cypress and scripted manual AC walkthroughs were not executed in this session. Partial Author smoke during debugging is documented in §4.1 only.
 4. **No live IT results:** `CreatePageIT` / `GetPageIT` were not run against `localhost:4502`.
-5. **Manual acceptance criteria** remain unverified in project artifacts.
+5. **Many manual acceptance criteria** (AC-001, AC-060, AC-110–AC-111, AC-130–AC-136, AC-150–AC-152) remain without formal verification evidence.
 6. This document reflects execution on **one machine** (Windows 11, Java 21.0.9, Maven 3.9.14) at the timestamps above; re-running tests may produce different timings but should yield the same pass/fail counts if the codebase is unchanged.
 
 ---

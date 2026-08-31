@@ -88,7 +88,7 @@ There is **no strong architectural reason** to combine status into PUT for this 
 | **Core API (all endpoints)** | **No end-user authentication required.** Auth is optional per assignment spec (Stretch: FR-S03). |
 | **Author (port 4502)** | Anonymous or AEM session may access servlets; no login gate in Core. |
 | **Publish / Dispatcher (port 80)** | Anonymous access allowed for Core. |
-| **CSRF (Publish/Dispatcher mutations only)** | Browser-originated `POST`, `PUT`, `PATCH` must include valid Granite CSRF token (platform layer, not application auth). |
+| **CSRF (browser mutations)** | Browser-originated `POST`, `PUT`, `PATCH` from the support-app clientlibs must include a valid Granite CSRF token via the `CSRF-Token` request header (platform layer, not application auth). |
 
 ### 2.2 Authorization expectation
 
@@ -101,14 +101,25 @@ There is **no strong architectural reason** to combine status into PUT for this 
 
 **Known Core limitation:** Open mutation API — document in threat model. Stretch may add AEM session checks and role-based rules.
 
-### 2.3 CSRF headers (Publish/Dispatcher browser calls)
+### 2.3 CSRF (browser mutations via support-app clientlibs)
+
+The implemented UI (`clientlib-support-app`) obtains a Granite CSRF token and sends it on every mutating request.
+
+| Step | Detail |
+|------|--------|
+| **1. Fetch token** | `GET /libs/granite/csrf/token.json` with `credentials: same-origin` |
+| **2. Parse response** | JSON body `{ "token": "<value>" }` |
+| **3. Mutating request** | Set request header `CSRF-Token: <value>` on `POST`, `PUT`, `PATCH` |
 
 | Header | Required when | Value |
 |--------|---------------|-------|
-| `:cq_csrf_token` | `POST`, `PUT`, `PATCH` from browser on Publish/Dispatcher | Token from `GET /libs/granite/csrf/token.json` |
-| `CSRF-Token` | Alternative accepted by Granite | Same token value |
+| `CSRF-Token` | `POST`, `PUT`, `PATCH` from browser (support-app clientlibs) | Token from step 1–2 above |
 
-Server-to-server or Author-dev direct calls during local testing may not require CSRF depending on AEM runmode configuration.
+**Implementation:** `ui.apps/.../clientlib-support-app/js/csrf.js` (`SupportTicketsCsrf.getToken`) and `api.js` (`headers['CSRF-Token'] = token`).
+
+**Do not use** `:cq_csrf_token` as a `fetch()` request header — it is not a valid HTTP header name and causes a synchronous client-side error before the request is sent (see [review-fixes.md](review-fixes.md) RF-001).
+
+Direct API calls (curl, Postman, server-to-server) may not require CSRF depending on AEM runmode and caller context; the browser UI always sends `CSRF-Token` on mutations.
 
 ---
 
@@ -121,11 +132,11 @@ Server-to-server or Author-dev direct calls during local testing may not require
 | `Accept` | Recommended | `application/json` |
 | `Content-Type` | Required for bodies | `application/json; charset=utf-8` |
 
-### 3.2 Mutating requests (Publish/Dispatcher via browser)
+### 3.2 Mutating requests (browser via support-app clientlibs)
 
 | Header | Required | Value |
 |--------|----------|-------|
-| `:cq_csrf_token` | Yes (browser on Publish) | CSRF token |
+| `CSRF-Token` | Yes (`POST`, `PUT`, `PATCH`) | Granite CSRF token from `GET /libs/granite/csrf/token.json` |
 
 ### 3.3 Response headers (all endpoints)
 
@@ -413,7 +424,7 @@ Not applicable — empty array returned when no matches (AC-073).
 |-----------|-------|
 | **HTTP method** | `POST` |
 | **URL** | `/bin/support-tickets.json` |
-| **Authentication** | None (Core); CSRF on Publish browser |
+| **Authentication** | None (Core); `CSRF-Token` on browser mutations |
 | **Authorization** | None (Core) |
 
 #### Request headers
@@ -422,7 +433,7 @@ Not applicable — empty array returned when no matches (AC-073).
 |--------|----------|
 | `Content-Type` | `application/json` |
 | `Accept` | Recommended: `application/json` |
-| `:cq_csrf_token` | Publish/Dispatcher browser: Yes |
+| `CSRF-Token` | Yes (browser via support-app clientlibs) |
 
 #### Request body
 
@@ -620,7 +631,7 @@ Ticket node does not exist in JCR → `404 NOT_FOUND`.
 |-----------|-------|
 | **HTTP method** | `PUT` |
 | **URL** | `/bin/support-tickets/{ticketId}.json` |
-| **Authentication** | None (Core); CSRF on Publish browser |
+| **Authentication** | None (Core); `CSRF-Token` on browser mutations |
 | **Authorization** | None (Core) |
 
 > **Status changes are NOT permitted on this endpoint.** Use `PATCH .../status.json`.
@@ -636,7 +647,7 @@ Ticket node does not exist in JCR → `404 NOT_FOUND`.
 | Header | Required |
 |--------|----------|
 | `Content-Type` | `application/json` |
-| `:cq_csrf_token` | Publish/Dispatcher browser: Yes |
+| `CSRF-Token` | Yes (browser via support-app clientlibs) |
 
 #### Request body
 
@@ -739,7 +750,7 @@ Unknown `ticketId` → `404 NOT_FOUND`.
 |-----------|-------|
 | **HTTP method** | `PATCH` |
 | **URL** | `/bin/support-tickets/{ticketId}/status.json` |
-| **Authentication** | None (Core); CSRF on Publish browser |
+| **Authentication** | None (Core); `CSRF-Token` on browser mutations |
 | **Authorization** | None (Core); enforced by state machine only |
 
 > **Dedicated status endpoint** — sole API path for status mutations.
@@ -755,7 +766,7 @@ Unknown `ticketId` → `404 NOT_FOUND`.
 | Header | Required |
 |--------|----------|
 | `Content-Type` | `application/json` |
-| `:cq_csrf_token` | Publish/Dispatcher browser: Yes |
+| `CSRF-Token` | Yes (browser via support-app clientlibs) |
 
 #### Request body
 
@@ -874,7 +885,7 @@ Unknown `ticketId` → `404` (checked before transition validation).
 |-----------|-------|
 | **HTTP method** | `POST` |
 | **URL** | `/bin/support-tickets/{ticketId}/comments.json` |
-| **Authentication** | None (Core); CSRF on Publish browser |
+| **Authentication** | None (Core); `CSRF-Token` on browser mutations |
 | **Authorization** | None (Core) |
 
 #### Path parameters
@@ -888,7 +899,7 @@ Unknown `ticketId` → `404` (checked before transition validation).
 | Header | Required |
 |--------|----------|
 | `Content-Type` | `application/json` |
-| `:cq_csrf_token` | Publish/Dispatcher browser: Yes |
+| `CSRF-Token` | Yes (browser via support-app clientlibs) |
 
 #### Request body
 

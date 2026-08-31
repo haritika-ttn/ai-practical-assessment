@@ -34,7 +34,7 @@ This document describes **how tools were used** during the project. It distingui
 | Cypress execution | Module builds; **no spec run recorded** |
 | Cloud Manager pipeline | Target platform; **no pipeline run in artifacts** |
 | JaCoCo / coverage tools | **Not measured** |
-| Separate reflection.md artifact | **[Not present in repository]** |
+| Formal Cypress / `it.tests` execution log | **Not recorded** — see [test-results.md](test-results.md) §4.1 for partial Author smoke evidence |
 
 ---
 
@@ -195,15 +195,19 @@ Debugging combined **developer runtime reports** with **AI code path analysis**.
 | Map tests to ACs | `@DisplayName("AC-xxx ...")` | AI in integration test classes |
 | Document strategy | — | AI → `test-strategy.md` (what/why/tier; no fabricated results) |
 | Execute and record | `mvn -B clean install` | AI via Shell → `test-results.md` |
-| Manual / live AEM | Browser, Quickstart | Developer (partially recorded in transcript) |
+| Manual Author E2E smoke | Browser, Quickstart `:4502` | Developer during debugging — summarized in [test-results.md](test-results.md) §4.1 |
+| Formal live IT / Cypress | `it.tests` `-Plocal`, `ui.tests` Cypress | **Not executed** in recorded build session |
 
 **Validation rules enforced:**
 
 - Do not mark tests passed without Surefire evidence
 - Distinguish AEM Mock tests from live `it.tests` / Cypress
 - Mark unexecuted suites as `[Result not available in project artifacts]`
+- Record **partial** manual Author smoke in `test-results.md` §4.1 when formal E2E logs do not exist (session evidence only)
 
-**Recorded result:** 131/131 Core tests PASS ([test-results.md](test-results.md)).
+**Recorded automated result:** 131/131 Core tests PASS ([test-results.md](test-results.md)).
+
+**Recorded manual E2E (partial):** Author `:4502` smoke checks during debugging (users API, CSRF create, nested endpoints) — see [test-results.md](test-results.md) §4.1. **Not** a full AC walkthrough; Publish/Dispatcher/Cypress still unrecorded.
 
 ---
 
@@ -238,6 +242,7 @@ Lifecycle artifacts were generated **in dependency order**:
 10. `test-results.md`
 11. `code-review-notes.md` + `review-fixes.md`
 12. `README.md` + `tool-workflow.md` (this file)
+13. `reflection.md`, `debugging-notes.md`, `final-ai-usage-summary.md`, `ai-prompts/`, `tool-specific/cursor-workflow/`
 
 **AI role:** Draft documents from specs, code, and execution logs.  
 **Developer role:** Approve specs, request artifacts, provide runtime debug data.  
@@ -253,7 +258,7 @@ Lifecycle artifacts were generated **in dependency order**:
 | AC IDs in tests | `ac002_postCreateReturns201` maps to AC-002 |
 | Conflict flagging | API filter approach abandoned when it conflicted with Sling resolution model |
 | No invented features | Stretch items (auth, pagination) documented but not coded |
-| Doc-code drift flagged | CSRF header mismatch recorded in code review (CR-007) |
+| Doc-code alignment | `api-contract.md` CSRF section updated to match `api.js` (`CSRF-Token` only) |
 
 When ambiguous, AI was instructed to: (1) identify ambiguity, (2) refer to spec, (3) consider AEM-native options, (4) recommend approach, (5) explain before implementing.
 
@@ -289,7 +294,16 @@ When ambiguous, AI was instructed to: (1) identify ambiguity, (2) refer to spec,
 | CSRF header fix | Developer Network tab observation | POST sent |
 | Full reactor | `mvn -B clean install` | BUILD SUCCESS, 131 tests |
 
-**Not validated in artifacts:** Publish/Dispatcher end-to-end, Cypress E2E, Cloud Manager deploy.
+**Live / E2E validation tiers:**
+
+| Tier | Method | Recorded? | Reference |
+|------|--------|-----------|-----------|
+| AEM Mock (Surefire) | `mvn -pl core test` | **Yes** — 131/131 PASS | [test-results.md](test-results.md) §3 |
+| Manual Author smoke | Browser on `:4502` during debug | **Partial** — session evidence | [test-results.md](test-results.md) §4.1, [review-fixes.md](review-fixes.md) RF-001–RF-003 |
+| Live `it.tests` (`-Plocal`) | AEM Testing Clients | **No** | [test-results.md](test-results.md) §5.1 |
+| Cypress UI | `ui.tests` | **No** | [test-results.md](test-results.md) §5.2 |
+| Publish + Dispatcher E2E | Browser via Dispatcher `:80` | **No** | [code-review-notes.md](code-review-notes.md) CR-001 |
+| Cloud Manager deploy | Pipeline | **No** | — |
 
 ---
 
@@ -326,6 +340,98 @@ When ambiguous, AI was instructed to: (1) identify ambiguity, (2) refer to spec,
 
 ---
 
+## 16. How project context is provided to AI
+
+Context was layered so the Agent could work spec-driven without guessing scope.
+
+| Context type | What was provided | How |
+|--------------|-------------------|-----|
+| **Assignment brief** | Full Core/Stretch requirements pasted in first prompt | Chat message (see [ai-prompts/planning.md](ai-prompts/planning.md)) |
+| **Approved specs** | Requirements, ACs, design, data model, API, UI flow, implementation plan | Markdown files in repo; Agent `Read` before each phase |
+| **Workspace guidance** | Module map, Maven commands, AEM conventions | [AGENTS.md](AGENTS.md) (referenced via [CLAUDE.md](CLAUDE.md)) |
+| **Structured decisions** | UI topology, API style | Cursor **AskQuestion** (Author+Publish, Sling Servlets) |
+| **Runtime symptoms** | 404 paths, empty JSON, Network tab behaviour | Developer messages during debugging ([ai-prompts/debugging.md](ai-prompts/debugging.md)) |
+| **Build output** | Surefire results, compile errors | Agent **Shell** (`mvn test`, `mvn clean install`) |
+| **Prompt history** | Phase-organized user prompts | [ai-prompts/](ai-prompts/) (exported from session transcript) |
+
+**Rule:** Implementation prompts explicitly required using approved specs as **source of truth** and flagging conflicts before changing design.
+
+---
+
+## 17. Information not shared unnecessarily with AI tools
+
+The following were **not** pasted into Cursor prompts or committed to the repository:
+
+| Category | Examples | Rationale |
+|----------|----------|-----------|
+| **Credentials** | AEM admin passwords, API keys, tokens, private keys | Security; use local Quickstart defaults only in `pom.xml` for dev deploy |
+| **Production / client secrets** | Cloud Manager API keys, OAuth client secrets, `.env` values | Not applicable to assessment; `ui.frontend.react.forms.af/.env*` gitignored |
+| **Personal data** | Real customer PII, employee emails beyond seeded test users | Assessment uses fictional seeded users (`agent1`, `agent2`, `supervisor1`) |
+| **Unrelated proprietary code** | Code from other employers or closed projects | Scope limited to this repo and Adobe public docs |
+| **Full session secrets dump** | Copy-pasting OSGi console output containing tokens | Only relevant error snippets shared when debugging |
+
+**What was shared (appropriate for this project):**
+
+- Public assignment requirements and self-authored specs
+- Repository source code and build logs
+- Sanitized runtime symptoms (URLs, HTTP status, error messages without secrets)
+- Adobe AEMaaCS documentation references (via WebSearch / Experience League links)
+
+**Practice for real projects:** Treat the AI context window like a code review audience — share architecture, interfaces, and error evidence; redact credentials, production URLs, and customer data.
+
+---
+
+## 18. E2E and live validation strategy
+
+Validation was **tiered** — not all tiers were executed, but each tier has a defined purpose.
+
+```mermaid
+flowchart TB
+    T1[Tier_1_AEM_Mock_Surefire] --> T2[Tier_2_Manual_Author_smoke]
+    T2 --> T3[Tier_3_it_tests_Plocal]
+    T3 --> T4[Tier_4_Cypress_UI]
+    T4 --> T5[Tier_5_Publish_Dispatcher_E2E]
+```
+
+| Tier | Purpose | This project | Evidence |
+|------|---------|--------------|----------|
+| **1 — AEM Mock** | Fast regression on business logic, servlet wiring, state machine | **Executed** | 131/131 PASS |
+| **2 — Manual Author smoke** | Repoinit, CSRF, nested `/bin` paths, user listing, UI flows | **Partial** — during debugging | [test-results.md](test-results.md) §4.1 |
+| **3 — Live IT** | API against running Author/Publish | **Not executed** | Archetype samples only in `it.tests` |
+| **4 — Cypress** | Browser automation | **Not executed** | Lint only in build |
+| **5 — Publish/Dispatcher** | Production-like URL, filter rules, cache | **Not executed** | CR-001 documented |
+
+**Why Tier 2 matters:** AEM Mock did not catch ResourceProvider routing, Oak authorizable lookup, or Granite CSRF header behaviour — all required live Author validation ([debugging-notes.md](debugging-notes.md)).
+
+**Honesty rule:** Partial manual smoke is recorded with **session evidence** (review-fixes, transcript), not claimed as a formal signed-off E2E test run.
+
+---
+
+## 19. Reusing this workflow in a real project
+
+| Practice | Reuse guidance |
+|----------|----------------|
+| **Spec before code** | Lock requirements, ACs, API contract, and data model in version control before Agent implementation |
+| **Plan before execute** | Use Cursor Plan mode (`CreatePlan`) for foundation, migrations, and risky refactors — review plan, then implement |
+| **Explicit decisions** | Use AskQuestion or written approval for topology, stack, and security trade-offs |
+| **Build gates** | Run `mvn test` / CI after every meaningful AI change; never merge on AI output alone |
+| **Runtime validation** | Deploy to a dev AEM instance for servlet, repoinit, and CSRF issues Mock cannot catch |
+| **Reject bad suggestions** | When runtime contradicts AI, revert and iterate (filter → ResourceProvider pattern) |
+| **Prompt history** | Export phase prompts (`ai-prompts/`) for audit and onboarding |
+| **Formal review pass** | Separate AI code review artifact before merge; document findings, don't auto-apply |
+| **Honest test reporting** | Distinguish Surefire, manual smoke, IT, and Cypress in `test-results.md` |
+| **Security hygiene** | Section 17 — no credentials or production secrets in AI context |
+
+**What to adapt by project size:**
+
+- **Small feature:** Lighter specs, still require ACs + API contract for AI boundaries
+- **Production AEM:** Add Dispatcher validation, live IT in CI, Cypress for critical UI paths
+- **Regulated environments:** Stricter redaction (§17), human sign-off on every AI-generated security-sensitive change
+
+**Companion artifacts:** [reflection.md](reflection.md), [final-ai-usage-summary.md](final-ai-usage-summary.md), [tool-specific/cursor-workflow/cursor-workflow.md](tool-specific/cursor-workflow/cursor-workflow.md)
+
+---
+
 ## Summary: suggestion vs decision vs implementation vs validation
 
 | Category | Meaning in this project |
@@ -335,9 +441,9 @@ When ambiguous, AI was instructed to: (1) identify ambiguity, (2) refer to spec,
 | **Actual implementation** | Files committed in `core`, `ui.apps`, `ui.config`, `ui.content`, etc. |
 | **Actual validation** | Maven test output, Surefire reports, developer runtime observation — recorded in `test-results.md` or transcript |
 
-**Prompt history location:** Cursor agent transcript `13262a8d-8e65-407b-ab4b-200d6bdc9f58` (~435 messages, Aug 26–31, 2026). **Not stored as a file in the repository.** For assessment submission, export or link per course instructions.
+**Prompt history location:** Cursor agent transcript `13262a8d-8e65-407b-ab4b-200d6bdc9f58` (~435 messages, Aug 26–31, 2026). Phase-organized export: [ai-prompts/](ai-prompts/).
 
-**Reflection artifact:** [Not present in repository at time of writing]
+**Lifecycle companions:** [reflection.md](reflection.md), [debugging-notes.md](debugging-notes.md), [final-ai-usage-summary.md](final-ai-usage-summary.md)
 
 ---
 
@@ -345,6 +451,8 @@ When ambiguous, AI was instructed to: (1) identify ambiguity, (2) refer to spec,
 
 - [README.md](README.md) — Setup and usage
 - [implementation-plan.md](implementation-plan.md) — Phased task plan
-- [test-results.md](test-results.md) — Execution evidence
+- [test-results.md](test-results.md) — Execution evidence (§4.1 manual Author smoke)
 - [code-review-notes.md](code-review-notes.md) — Review findings
 - [review-fixes.md](review-fixes.md) — Fix log
+- [ai-prompts/](ai-prompts/) — Prompt history by phase
+- [tool-specific/cursor-workflow/cursor-workflow.md](tool-specific/cursor-workflow/cursor-workflow.md) — Cursor-specific workflow
